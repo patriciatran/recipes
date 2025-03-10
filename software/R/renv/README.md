@@ -21,6 +21,9 @@ Container definition files for reproducing an R environment using the [renv pack
 ## Obtain necessary files
 
 There are several files that you need to generate in order to duplicate your R environment.
+
+On your computer, open RStudio, and install the `renv` package.
+
 To do so,
 
 1. Install the `renv` package (skip if already installed) 
@@ -33,7 +36,7 @@ To do so,
 
 2. Initialize version tracking
 
-   For an existing project, you initialize the `renv` tracking with
+   For an existing project, you initialize the `renv` tracking by typing the followin in your R console
 
    ```
    library(renv)
@@ -54,13 +57,12 @@ To do so,
 
 3. Continue working on project
 
-   If your project is still in development, continue as you normally would, including installing packages.
-   Once you are satisfied your code is ready, go to the next step.
+   If your project is still in development, continue as you normally would, including installing packages and writing code in a Rmd or R file.
+   Once you are satisfied your code is ready, go to the next step to create a snapshot of your environment.
 
 4. Capture a "snapshot" of your project environment
 
-   Assuming that your environment is set up to your satisfaction, and that you have already initialized the `renv` environment (see step 2 above), 
-   then you can record the packages and versions your scripts need with the following command:
+   Assuming that your environment is set up to your satisfaction, and that you have already initialized the `renv` environment (see step 2 above), then you can record the packages and versions your scripts need with the following command in the R console:
 
    ```
    library(renv)
@@ -71,6 +73,8 @@ To do so,
 
 5. Copy necessary files
 
+   You local R project now have 3 files that need to be transferred to CHTC's access point.
+
    The command from the previous step updated several files.
    These files are required to replicate your environment:
 
@@ -78,26 +82,76 @@ To do so,
    * `project_folder/renv/activate.R`
    * `project_folder/renv/settings.json`
 
-## Build Notes
-
-See the [rocker/r-ver tags 
-page](https://hub.docker.com/r/rocker/r-ver/tags) 
-to see which versions of R are available
-and adjust the `From` line of the recipe file accordingly.  
-***The version of R you choose must match the version of R you were using when you generated the `renv` files!***
-
-This recipe assumes that the `renv.lock`, `activate.R`, and `settings.json` files are in the same directory as the definition file.
-You can check that the files are in the right location with this command:
-
+To transfer file to your CHTC folder, use the `scp` command:
+e.g.
 ```
-ls activate.R renv.def renv.lock settings.json
+scp project_folder/renv.lock [netID]@[address]:/home/netid/.
+scp project_folder/renv/activate.R [netID]@[address]:/home/netid/.
+scp project_folder/renv/settings.json [netID]@[address]:/home/netid/.
 ```
 
-If correct, you will just see a printout of the file names.
-If incorrect, you will see an error message like `ls: cannot access '<filename>': No such file or directory`. 
+6. Create an executable .R script.
 
-> If building an Apptainer container on the HTC system, make sure that you list those files in the `transfer_input_files` line of your submit file!
+If you wrote your script in an `Rmd` file, create a `R` file to be used as an executable script later on in your HTCondor submit file.
+
+To create a `R` file, you can strip your `Rmd` file by typing this in your RConsole:
+```
+knitr::purl("script.Rmd")
+```
+This creates a file named `script.R`. Transfer this file onto CHTC as well.
+
+```
+scp project_folder/script.R [netID]@[address]:/home/netid/.
+```
+
+## Building the Renv container
+
+You can choose to build the container using Docker or Apptainer.
+
+### Instructions for Apptainer
+
+>[!NOTE]
 > See [our guide](https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc) for more information on building Apptainer containers on the HTC system.
+
+Login to your CHTC access point, and create a folder that contains the `.lock`, `.R.` and `.json files`.
+Get also a copy of the .def file from the `chtc/recipes/software/R/env/renv.def` page.
+
+Get a copy of a `build.sub` file and place it in the same folder, see the CHTC guides here: (https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#start-an-interactive-build-job)
+
+Edit the `build.sub` file to **match the R version** in your `renv.lock` file with the `From:` line from the `.def` file.
+
+For example:
+```
+grep 'Version' renv.lock | head -n 1
+#     "Version": "4.4.0",
+
+grep 'From:' renv.def
+# From: rocker/r-ver:4.4.0
+```
+
+>[!NOTE]
+> See the [rocker/r-ver tags page](https://hub.docker.com/r/rocker/r-ver/tags) to see which versions of R are available
+and adjust the `From` line of the recipe file accordingly.  ***The version of R you choose must match the version of R you were using when you generated the `renv` files!***
+>This recipe assumes that the `renv.lock`, `activate.R`, and `settings.json` files are in the same directory as the definition file.>You can check that the files are in the right location with this command:
+>```
+>ls activate.R renv.def renv.lock settings.json
+>```
+>If correct, you will just see a printout of the file names.
+>If incorrect, you will see an error message like `ls: cannot access '<filename>': No such file or directory`. 
+
+Additionally, ensure that your `build.sub` file contains the `.lock`, `.R` and the `.json` file in the line `transfer_input_files`:
+```
+grep 'transfer_input_files' build.sub
+# If you have additional files in your /home directory that are required for your container, add them to the transfer_input_files line as a comma-separated list.
+#transfer_input_files = activate.R,renv.def,renv.lock,settings.json
+```
+
+
+Start the interactive job (`condor_build -i build.sub`) and use the apptainer `build` and `shell` commands to build and test the container. Once satisfied, move the container to `staging` before exiting the interactive build job.
+
+To use your `renv.sif` file in a HTCondor job, please see: https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#use-an-apptainer-container-in-htc-jobs
+
+
 
 ### Linux libraries
 
