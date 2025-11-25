@@ -18,10 +18,25 @@
 
 Container definition files for reproducing an R environment using the [renv package](https://rstudio.github.io/renv/). 
 
+# Overview
+
+To create a container that contains everything from your local RStudio instance, you will need to first create a snapshot of your packages. 
+
+Then you will transfer the files necessary to reproduce your environment to CHTC. 
+
+Then, on CHTC, you will need to create an Apptainer container but submitting an interactive HTCondor job. This will result in a SIF file, the actual container containing the software (in this case R & the R packages) which you will move to your CHTC staging folder. 
+
+After that you can use your container path in any HTCondor submit file.
+
+Next time you want to use the same R/R package containers, you will not need to recreate the container (laptop renv snapshot, interactive build job), but rather only need to specify the path to the staging file.
+![alt text](renv_workflow.png "renv conceptual workflow")
+
+
 ## Obtain necessary files
 
 There are several files that you need to generate in order to duplicate your R environment.
 
+### On your laptop, set up a RProject with the renv initialized.
 On your computer, open RStudio, and install the `renv` package.
 
 To do so,
@@ -55,6 +70,10 @@ To do so,
    > We recommend that you do *not* proceed.
    > Instead, fix the specified syntax errors and try again.
 
+Alternatively, you can click File > New Project > Check the box for initializing the renv project > Create Project.
+
+![alt text](rstudio_project_renv.png "renv project setting")
+
 3. Continue working on project
 
    If your project is still in development, continue as you normally would, including installing packages and writing code in a Rmd or R file.
@@ -71,6 +90,8 @@ To do so,
 
    As mentioned in the warning in Step 2, this process cannot scan files with R syntax errors.
 
+## Transfer the necessary files from your laptop to CHTC
+
 5. Copy necessary files
 
    You local R project now have 3 files that need to be transferred to CHTC's access point.
@@ -83,12 +104,16 @@ To do so,
    * `project_folder/renv/settings.json`
 
 To transfer file to your CHTC folder, use the `scp` command:
+
+For example, if you have a folder /home/netid/project on CHTC, and you want to move your files from your laptop to there, type:
 e.g.
 ```
-scp project_folder/renv.lock [netID]@[address]:/home/netid/.
+scp project_folder/renv.lock [netID]@[address]:/home/netid/project/.
 scp project_folder/renv/activate.R [netID]@[address]:/home/netid/.
 scp project_folder/renv/settings.json [netID]@[address]:/home/netid/.
 ```
+
+## Create the Rscript that you will eventually want to run on CHTC
 
 6. Create an executable .R script.
 
@@ -104,9 +129,9 @@ This creates a file named `script.R`. Transfer this file onto CHTC as well.
 scp project_folder/script.R [netID]@[address]:/home/netid/.
 ```
 
-## Building the Renv container
+## Building the R container on CHTC
 
-You can choose to build the container using Docker or Apptainer.
+You can choose to build the container using Docker or Apptainer. The instructions below are for Apptainer. If you choose this route, you do not have to install Docker on your laptop at all.
 
 ### Instructions for Apptainer
 
@@ -146,14 +171,53 @@ grep 'transfer_input_files' build.sub
 #transfer_input_files = activate.R,renv.def,renv.lock,settings.json
 ```
 
-
 Start the interactive job (`condor_build -i build.sub`) and use the apptainer `build` and `shell` commands to build and test the container. Once satisfied, move the container to `staging` before exiting the interactive build job.
 
 To use your `renv.sif` file in a HTCondor job, please see: https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#use-an-apptainer-container-in-htc-jobs
 
+In summary:
 
+Step by step:
+```
+ssh netID@[address].chtc.wisc.edu
+# Enter your password
+# cd into the project folder where you transferred your .lock, .json and activate.R file
+cd project 
+# make a copy of the renv.def file
+wget https://github.com/CHTC/recipes/raw/refs/heads/main/software/R/renv/renv.def
+nano renv.def
+# IMPORTANT! Edit the R version in your renv.def file to match the one in your renv.lock file. 
+# save and exit (ctrl + x, yes, enter)
+# get a copy the build template
+# go to this website: https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc.html#start-an-interactive-build-job and copy the text in grey into a new file named build.sub
+nano build.sub
+# paste the build.sub text
+# IMPORTANT!! Edit the transfer_input_files = line to say: 
+# transfer_input_files = renv.def, activate.R, renv.def, renv.lock, settings.json
+# save and exit (ctrl + x, yes, enter)
+ls
+# You should see activate.R, settings.json, renv.lock, build.sub, renv.def
+```
 
-### Linux libraries
+Submit the job interactively:
+```
+condor_submit -i buid.sub
+[enter the interactive job]
+apptainer build renv.sif renv.def
+apptainer shell -e renv.sif 
+# test it
+exit
+# move the sif file to staging
+mv renv.sif /staging/netid/.
+# Exit the interactive job
+exit
+```
+
+# Common errors during the renv container build:
+
+During the `apptainer build` step, you might encounter these errors.
+
+## Linux libraries
 
 Some R packages require specific Linux libraries that are not included in the base container by default.
 When `renv` tries to install such an R package, the container build will fail with an error message that looks like this:
@@ -170,15 +234,15 @@ To fix this, you will need to add instructions to the container definition file 
 
 Example:
 
-For example, if the error message during the build is " libfftw3.so.3", you need to figure out what library libfftw3 is part of. LIBRARY.so.NUMBER. 
+For example, if the error message during the build is "libfftw3.so.3", then the LIBRARY name is libfftw3.
 
-Use nano to edit the renv.def file and add these lines:
+Directly inside of the interactive job, you can use nano to edit the renv.def file and add these lines:
 
 ```
-% post
-   apt-get -y update
+%post
+   chmod 777 /tmp
+   apt-get update
    apt-get -y install libfftw3-dev
-   apt-get clean
 ```
 
 Rebuild your container image:
