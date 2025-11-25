@@ -168,7 +168,23 @@ where `LIBRARY` and `NUMBER` will depend on what the missing library is.
 
 To fix this, you will need to add instructions to the container definition file to install the corresponding `LIBRARY` Linux package (usually named `LIBRARY-dev`).
 
-[ Instructions TBD. For assistance, contact a facilitator ]
+Example:
+
+For example, if the error message during the build is " libfftw3.so.3", you need to figure out what library libfftw3 is part of. LIBRARY.so.NUMBER. 
+
+Use nano to edit the renv.def file and add these lines:
+
+```
+% post
+   apt-get -y update
+   apt-get -y install libfftw3-dev
+   apt-get clean
+```
+
+Rebuild your container image:
+```
+apptainer build renv.sif renv.def
+```
 
 ## [renv.def](renv.def)
 
