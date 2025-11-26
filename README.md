@@ -74,27 +74,6 @@ The command to retrieve the file is
 wget https://github.com/CHTC/recipes/raw/main/software/guide_examples/simple_apptainer.def
 ```
 
-### Directory
-
-At this time, GitHub does not have a mechanism for retrieving a sub-directory of a repository.
-Therefore, for cases where a user may want to have an entire directory, we have prepared compressed tarballs for easy retrieval.
-
-Follow the instructions above to retrieve the `.tar.gz` file within the directory of interest. 
-Then unpack the compressed directory using the `tar` command.
-
-For example, the [workflows/simple_DAG](/workflows/simple_DAG) directory includes the compressed file `simple_DAG.tar.gz`.
-Retrieve the file using the command
-
-```
-wget https://github.com/CHTC/recipes/raw/main/workflows/simple_DAG/simple_DAG.tar.gz
-```
-
-and then unpack the compressed directory with
-
-```
-tar -xzf simple_DAG.tar.gz
-```
-
 ## Contributions and Feedback
 
 If you are interested in contributing to this repository, or have feedback on how we can improve it, please reach out 
