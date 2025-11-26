@@ -20,11 +20,14 @@ Container definition file for installing packages using conda and an `environmen
 
 # Overview
 
-** Who would need this? ** Conda is a widely used package managers for both python-based and non-python packages, and contains software from many fields of study. Because of it's simplicity to manage software dependencies, many researchers might be familiar with installing conda packages on their laptop or a single server (e.g. a lab server). However, if you want to reproduce that environment in one of your HTCondor job, it's not as simple as typing `conda activate` in your executable file. How do you do this then?
+**Who would need this?** Conda is a widely used package managers for both python-based and non-python packages, and contains software from many fields of study. Because of it's simplicity to manage software dependencies, many researchers might be familiar with installing conda packages on their laptop or a single server (e.g. a lab server). However, if you want to reproduce that environment in one of your HTCondor job, you must first use convert it into a container. How do you do this then?
 
-** Overview ** The idea is to generate a `yml` file from your existing `conda environment`, transfer this file to the access point, and use it to build a container image file. The container image file can then be called in your HTCondor submit script, and activated it in your script.
+**Overview** The idea is to generate a `yml` file from your existing `conda environment`, transfer this file to the access point, and use it to build a container image file. The container image file can then be called in your HTCondor submit script, and activated it in your script.
 
 >[!INFO] For more information about conda files and conda yml files, [visit the conda documentation](https://docs.conda.io/projects/conda/en/stable/user-guide/getting-started.html)
+
+>[!TIP] If you do not intend to move your **existing** conda environment *and/or* environment only contains 1 or a few packages installed from conda, you may want to instructions on how to use conda-base instead: [here](../base-conda/README.md). That will skip the whole exporting to yaml process, and go directly into building the Apptainer container using the `conda-base.def` definition file template in a build job.
+
 
 # Step by step:
 
@@ -137,6 +140,29 @@ mv yourEnvironmentName.sif /staging/netid/.
 ```
 You can now your the container image (`.sif`) file in your submit file by specifying `container_image=file:///staging/netid/yourEnvironmentName.sif`
 
+### Potential issues during apptainer build job
+
+You might see that a package cannot be found in the current channels listed:
+
+```
+PackagesNotFoundError: The following packages are not available from current channels:
+  - PACKAGE
+ Current channels:
+
+  - https://conda.anaconda.org/conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+```
+
+If that's the case, open your environment.yaml and add the channel in the list, for example, if you package is from the bioconda channel you would add it to the list
+
+```
+channels:
+  - conda-forge
+  - bioconda <---- LINE TO ADD
+```
+
+Then retype the `apptainer build` command.
 
 ## Using the environment in jobs
 
