@@ -274,10 +274,10 @@ Now that you have a custom-made R container for your project, you can use it in 
 
 To run an HTCondor job with this new container, the same principle applies as standard jobs: an executable `sh` script, a `submit` file with a `container_image` file path in linking to the `file://staging/netid/renv.sif` container you just created, and in this case an `.R` file that will be run on the remote machine. 
 
-> ![TIP]
+>[!TIP]
 > This is a good time to ensure that all your folder is set-up properly for the job to run, including all the files you need
 
-> ![TIP]
+>[!TIP]
 > If you are testing your container in a job for the first time, make sure the executable `.R` script written in your HTCondor submit file applies on 1 "instance" of the job your want to run. Recall that HTcondor can queue instances as part of the submit file `queue` statement. This likely means that you need to **modify** the original script that you used and tested on your laptop.
 
 
