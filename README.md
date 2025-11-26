@@ -73,6 +73,10 @@ The command to retrieve the file is
 wget https://github.com/CHTC/recipes/raw/main/software/guide_examples/simple_apptainer.def
 ```
 
+Alternatively, you can navigate to the file you want in the web browser, and right-click on "Raw" and Copy Link Address. Then, while logged in CHTC, paste that address after the `wget` command logged into the server.
+
+![Alt text](./docs/getfileURL.png "How to retrieve a URL for direct download")
+
 ## Contributions and Feedback
 
 If you are interested in contributing to this repository, or have feedback on how we can improve it, please reach out 
