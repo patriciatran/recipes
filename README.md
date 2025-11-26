@@ -46,10 +46,9 @@ We welcome contributions and feedback! [See below](#contributions-and-feedback) 
 You can retrieve the contents of this repository while logged in to CHTC ([Connecting to CHTC](https://chtc.cs.wisc.edu/uw-research-computing/connecting)) following the instructions below.
 
 1. [Whole repository](#whole-repository)
-1. [Individual files](#individual-files)
-1. [Directory](#directory)
+2. [Individual files](#individual-files)
 
-### Whole repository
+### 1. Whole repository
 
 If you want the whole repository, simply run
 
@@ -57,7 +56,7 @@ If you want the whole repository, simply run
 git clone https://github.com/CHTC/recipes.git
 ```
 
-### Individual files
+### 2. Individual files
 
 Individual files can be retrieved using the URL `https://github.com/CHTC/recipes/raw/main/` in combination with the relative path to the file within the repository.
 
