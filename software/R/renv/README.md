@@ -52,7 +52,7 @@ On your computer, open RStudio, and install the `renv` package. There are two wa
    ```
 
 > [!NOTE] 
-> The console is the box where you can type commands interactively. This is not the same as typing this in the saved R file containing your code. More information here [here](https://docs.posit.co/ide/user/ide/guide/code/console.html)
+> The console is the box where you can type commands interactively. This is not the same as typing this in the saved R file containing your code. More information [here](https://docs.posit.co/ide/user/ide/guide/code/console.html)
 
 2. **Initialize version tracking.**
    **Make sure you run this command in the R project folder with the scripts that you want to use.**
@@ -69,11 +69,10 @@ On your computer, open RStudio, and install the `renv` package. There are two wa
 
    Then enter `y` to confirm you want to initialize the environment.
 
-
-   > [!WARNING] If your R script contains a syntax error, `renv` won't be able to scan that file!
-   > If there are syntax errors, the `init` command should print warning messages before asking if you want to proceed.
-   > We recommend that you do *not* proceed.
-   > Instead, fix the specified syntax errors and try again.
+>[!WARNING] If your R script contains a syntax error, `renv` won't be able to scan that file!
+> If there are syntax errors, the `init` command should print warning messages before asking if you want to proceed.
+> We recommend that you do *not* proceed.
+> Instead, fix the specified syntax errors and try again.
 
 Alternatively, you can click File > New Project > Check the box for initializing the renv project > Create Project.
 
@@ -110,7 +109,7 @@ Alternatively, you can click File > New Project > Check the box for initializing
 
 To transfer file to your CHTC folder, use the `scp` command:
 
-For example, if you have a folder /home/netid/project on CHTC, and you want to move your files from your laptop to there, type:
+For example, if you have a folder `/home/netid/project` on CHTC, and you want to move your files from your laptop to there, type:
 e.g.
 ```
 scp project_folder/renv.lock [netID]@[address]:/home/netid/project/.
@@ -124,21 +123,20 @@ scp project_folder/renv/settings.json [netID]@[address]:/home/netid/.
 
 If you wrote your script in a `.R` file, you will transfer this file to your `home` folder on the access point.
 
-If you wrote your script in an Markdown `Rmd` file, convert it to an `R` file first.
-
-You can strip your `Rmd` file and turn it into a `R` file by typing this in your RConsole:
+If you wrote your script in an Markdown `Rmd` file, convert it to an `R` file first. To do that, you can strip your `Rmd` file and turn it into a `R` file by typing this in your RConsole on your laptop:
 
 ```
 knitr::purl("script.Rmd")
 ```
+
 (Replace script.Rmd with the name of your choice)
 
 This creates a file named `script.R`. Transfer this file onto CHTC as well.
 
-Transfer the file to the desired location in your `/home/netid` folder.
+Transfer the `script.R` file to the desired location in your CHTC `/home/netid/project` folder.
 
 ```
-scp project_folder/script.R [netID]@[address]:/home/netid/.
+scp project_folder/script.R [netID]@[address]:/home/netid/project/.
 ```
 
 ## Building the R container on CHTC
@@ -150,14 +148,16 @@ You can choose to build the container using Docker or Apptainer. The instruction
 
 ### Instructions for Apptainer
 
+These steps are done **logged in** to the CHTC access point.
+
 >[!TIP]
 > See [our guide](https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc) for more information on building Apptainer containers on the HTC system.
 
 Login to your CHTC access point, and create a folder that contains the `.lock`, `.R.` and `.json files`.
 
-Get also a copy of the .def file from the `chtc/recipes/software/R/env/renv.def` page.
+Get also a copy of the .def file from the [`chtc/recipes/software/R/env/renv.def`](./renv.def) page.
 
-Get a copy of a `build.sub` file and place it in the same folder, see the CHTC guides here: (https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#start-an-interactive-build-job)
+Get a copy of a `build.sub` file and place it in the same folder. A `build.sub` example is found at the CHTC guide here: (https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#start-an-interactive-build-job)
 
 Edit the `build.sub` file to **match the R version** in your `renv.lock` file with the `From:` line from the `.def` file.
 
@@ -171,25 +171,31 @@ grep 'From:' renv.def
 ```
 
 >[!IMPORTANT]
-> See the [rocker/r-ver tags page](https://hub.docker.com/r/rocker/r-ver/tags) to see which versions of R are available
-and adjust the `From` line of the recipe file accordingly.  **The version of R you choose must match the version of R you were using when you generated the `renv` files!**
->This recipe assumes that the `renv.lock`, `activate.R`, and `settings.json` files are in the same directory as the definition file.>You can check that the files are in the right location with this command:
->```
->ls activate.R renv.def renv.lock settings.json
->```
->If correct, you will just see a printout of the file names.
->If incorrect, you will see an error message like `ls: cannot access '<filename>': No such file or directory`. 
+> See the [rocker/r-ver tags page](https://hub.docker.com/r/rocker/r-ver/tags) to see which versions of R are available and adjust the `From` line of the recipe file accordingly.  **The version of R you choose must match the version of R you were using when you generated the `renv` files!**
 
-Additionally, ensure that your `build.sub` file contains the `.lock`, `.R` and the `.json` file in the line `transfer_input_files`:
+
+This recipe assumes that the `renv.lock`, `activate.R`, and `settings.json` files are in the same directory as the definition file.
+
+You can check that the files are in the right location with this command:
+
+```
+ls activate.R renv.def renv.lock settings.json
+```
+
+If correct, you will just see a printout of the file names.
+
+If incorrect, you will see an error message like `ls: cannot access '<filename>': No such file or directory`. 
+
+**Additionally**, ensure that your `build.sub` file contains the `.lock`, `.R` and the `.json` file in the line `transfer_input_files`:
 ```
 grep 'transfer_input_files' build.sub
 # If you have additional files in your /home directory that are required for your container, add them to the transfer_input_files line as a comma-separated list.
 #transfer_input_files = activate.R,renv.def,renv.lock,settings.json
 ```
 
-Start the interactive job (`condor_build -i build.sub`) and use the apptainer `build` and `shell` commands to build and test the container. Once satisfied, move the container to `staging` before exiting the interactive build job.
+To begin building your Apptainer container, start an interactive job (`condor_build -i build.sub`) and use the apptainer `build` and `shell` commands to build and test the container. Once the software installation has been tested, move the container to `staging` before exiting the interactive build job.
 
-To use your `renv.sif` file in a HTCondor job, please see: https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#use-an-apptainer-container-in-htc-jobs
+To use the path to your `renv.sif` file in a HTCondor job, please see: https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#use-an-apptainer-container-in-htc-jobs
 
 In summary, 
 
@@ -247,11 +253,11 @@ where `LIBRARY` and `NUMBER` will depend on what the missing library is.
 
 To fix this, you will need to add instructions to the container definition file to install the corresponding `LIBRARY` Linux package (usually named `LIBRARY-dev`).
 
-Example:
+**Example**:
 
-For example, if the error message during the build is "libfftw3.so.3", then the LIBRARY name is libfftw3.
+For example, if the error message during the build is `libfftw3.so.3`, then the LIBRARY name is `libfftw3` according to the syntax above.
 
-Directly inside of the interactive job, you can use nano to edit the renv.def file and add these lines:
+Directly inside of the interactive job, you can use nano to edit the `renv.def` file and add these lines below the `%post` line:
 
 ```
 %post
