@@ -129,7 +129,6 @@ PackagesNotFoundError: The following packages are not available from current cha
 
   - https://conda.anaconda.org/conda-forge
   - https://repo.anaconda.com/pkgs/main
-  - https://repo.anaconda.com/pkgs/r
 ```
 
 If that's the case, open your environment.yaml and add the channel in the list, for example, if you package is from the bioconda channel you would add it to the list
