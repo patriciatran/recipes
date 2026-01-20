@@ -31,10 +31,10 @@ Container definition file for installing packages using conda and an `environmen
 > If you do not intend to move your **existing** conda environment *and/or* environment only contains 1 or a few packages installed from conda, you may want to instructions on how to use conda-base instead: [here](../base-conda/README.md). That will skip the whole exporting to yaml process, and go directly into building the Apptainer container using the `conda-base.def` definition file template in a build job.
 
 
-# Step by step:
+## Step by step:
 
 This guide assumes that you already have a conda environment that you want to export. 
-If you don't you can create one by typing this, from a Terminal window on your laptop:
+If you do not, then you can create one by opening a Terminal window on your laptop and entering the following commands:
 
 ```
 # assumes conda is installed previously
@@ -53,11 +53,11 @@ To create such a file, follow these steps:
 
 1. Activate the conda environment you want to replicate.
 
-```
-conda activate MyEnvironment 
-```
-You will know that the environment is activate is your see it in parenthesis in front of your terminal prompt:
-eg. `(MyEnvironment) name@laptop ~ % `
+    ```
+    conda activate MyEnvironment 
+    ```
+    
+    You can confirm the environment is activated by running `conda env list` - the active environment is marked by an asterisk (`*`).
 
 2. Export the conda environment using the following command:
 
@@ -75,29 +75,20 @@ eg. `(MyEnvironment) name@laptop ~ % `
 For more information on the `environment.yaml` file, see the [Conda documentation](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#exporting-an-environment-file-across-platforms).
 
 > [!TIP] 
-> If you don't know what a built file is, visit this [documentation](https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc.html#start-an-interactive-build-job). If you don't know how to copy a local file to the server, visit [this page](https://chtc.cs.wisc.edu/uw-research-computing/transfer-files-computer)
+> An example `build.sub` submit file can be found at [documentation](https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc.html#start-an-interactive-build-job). If you don't know how to copy a local file to the server, visit [this page](https://chtc.cs.wisc.edu/uw-research-computing/transfer-files-computer)
 
  3.1 Docker
  Instructions TBD
 
- **3.2 Apptainer build**
+## Build Apptainer container on CHTC
 
-Login to the server:
-```
-ssh netid@address
-# enter password
-# cd into the folder where your generic build file is
-# for example if you have a folder called recipes where you usually store all your def files:
-cd recipes
-# obtain a copy of the conda-env-yaml.def template:
-wget https://github.com/CHTC/recipes/raw/refs/heads/main/software/Conda/conda-env-yaml/conda-env-yaml.def
-```
+Login to CHTC as normal, following the instructions [here](https://chtc.cs.wisc.edu/uw-research-computing/connecting).
 
-### Modifying the conda-env-yaml.def file
+Fetch a copy of the conda-env-yaml.def template by running the following command:
 
-Edit the conda-env-yaml.def file to and replace `environment.yaml` with the file name of the yaml file YOU created. 
-For example, environment.yaml --> MyEnvironment.yaml. 
 
+> [!NOTE]
+> If you used a name different from `environment.yaml`, you will need to edit the `conda-env-yaml.def` file you downloaded. Use a command line editor such as `nano` or `vi` to open the `conda-env-yaml.def` file, then and replace `environment.yaml` with the name of the `.yaml` file you are using.
 
 ## Naming the environment
 
@@ -119,29 +110,13 @@ conda env create -n your_environment_name -f /environment.yaml
 
 Once your conda-env-yaml.def file has been edited, save.
 
-Next  modify your generic `build.sub` file and ensure the `transfer_input_files==` line mentions the files needed to build the container:
-- environment.yaml (or whatever name file you used)
-- conda-env-yaml.def
+### Prepare interactive build job
 
-for example: `transfer_input_files == environment.yaml, conda-env-yaml.def`
+Next  modify your generic `build.sub` file and ensure the `transfer_input_files=` line mentions the files needed to build the container:
+- `environment.yaml` (or whatever name file you used)
+- `conda-env-yaml.def`
 
-Interactively start a job to build your container:
-```
-# submit interactive job
-condor_submit -i build.sub
-# check where you are
-pwd
-# build the container
-apptainer build yourEnvironmentName.sif conda-env-yaml.def
-# If no error message, proceed with testing:
-apptainer shell -e yourEnvironmentName.sif
-# type some commands from packages you expect to be in there such as manuals, -h pages.
-# exit the container
-exit
-# move the container image to your staging folder
-mv yourEnvironmentName.sif /staging/netid/.
-```
-You can now your the container image (`.sif`) file in your submit file by specifying `container_image=file:///staging/netid/yourEnvironmentName.sif`
+For example: 
 
 ### Potential issues during apptainer build job
 

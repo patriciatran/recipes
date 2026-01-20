@@ -27,7 +27,7 @@ Container definition files for reproducing an R environment using the [renv pack
 
 Then you will transfer the files necessary (`activate.R`, `renv.lock` and `setting.json`) from your laptop to your CHTC home directory. 
 
-Then, on CHTC, you will need to create an Apptainer container by submitting an interactive HTCondor job. This will result in a `SIF` file, which is the container file containing the software and its dependencies (in this case a specific version of R & the R packages needed to run your code). You will move this `SIF` file to your CHTC `/staging/netid` folder. 
+Then, on CHTC, you will need to create an Apptainer container by submitting an interactive HTCondor job. This will result in a `.sif` file, which is the container file containing the software and its dependencies (in this case a specific version of R & the R packages needed to run your code). You will move this `.sif` file to your CHTC `/staging/netid` folder. 
 
 After that you can use your container path in any HTCondor submit file.
 
@@ -43,7 +43,7 @@ There are several files (`renv.lock`, `activate.R` and `settings.json`) that you
 
 On your computer, open RStudio, and install the `renv` package. There are two ways to set it up: by typing commands, or by using the Rstudio Interface. Use either of the two options, but not both.
 
-1. **In your project, install the `renv` package (skip if already installed)**
+1. **In your project, install the `renv` package** (skip if already installed)
 
    Run the following command in your R console:
 
@@ -69,7 +69,8 @@ On your computer, open RStudio, and install the `renv` package. There are two wa
 
    Then enter `y` to confirm you want to initialize the environment.
 
->[!WARNING] If your R script contains a syntax error, `renv` won't be able to scan that file!
+>[!WARNING] 
+> If your R script contains a syntax error, `renv` won't be able to scan that file!
 > If there are syntax errors, the `init` command should print warning messages before asking if you want to proceed.
 > We recommend that you do *not* proceed.
 > Instead, fix the specified syntax errors and try again.
@@ -112,10 +113,12 @@ To transfer file to your CHTC folder, use the `scp` command:
 For example, if you have a folder `/home/netid/project` on CHTC, and you want to move your files from your laptop to there, type:
 e.g.
 ```
-scp project_folder/renv.lock [netID]@[address]:/home/netid/project/.
-scp project_folder/renv/activate.R [netID]@[address]:/home/netid/.
-scp project_folder/renv/settings.json [netID]@[address]:/home/netid/.
+scp project_folder/renv.lock [netID]@[address]:/home/netid/project/
+scp project_folder/renv/activate.R [netID]@[address]:/home/netid/project/
+scp project_folder/renv/settings.json [netID]@[address]:/home/netid/project/
 ```
+
+For more information on transferring files from your computer to CHTC, see [this guide](https://chtc.cs.wisc.edu/uw-research-computing/transfer-files-computer).
 
 ## Code and test the Rscript that you will eventually want to run on CHTC
 
@@ -136,7 +139,7 @@ This creates a file named `script.R`. Transfer this file onto CHTC as well.
 Transfer the `script.R` file to the desired location in your CHTC `/home/netid/project` folder.
 
 ```
-scp project_folder/script.R [netID]@[address]:/home/netid/project/.
+scp project_folder/script.R [netID]@[address]:/home/netid/project/
 ```
 
 ## Building the R container on CHTC
@@ -153,9 +156,9 @@ These steps are done **logged in** to the CHTC access point.
 >[!TIP]
 > See [our guide](https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc) for more information on building Apptainer containers on the HTC system.
 
-Login to your CHTC access point, and create a folder that contains the `.lock`, `.R.` and `.json files`.
+Login to your CHTC access point, and navigate to the folder that contains the `.lock`, `.R` and `.json files`.
 
-Get also a copy of the .def file from the [`chtc/recipes/software/R/env/renv.def`](./renv.def) page.
+Get also a copy of the `.def` file from the [`chtc/recipes/software/R/renv/renv.def`](./renv.def) page.
 
 Get a copy of a `build.sub` file and place it in the same folder. A `build.sub` example is found at the CHTC guide here: (https://chtc.cs.wisc.edu/uw-research-computing/apptainer-htc#start-an-interactive-build-job)
 
@@ -190,7 +193,7 @@ If incorrect, you will see an error message like `ls: cannot access '<filename>'
 ```
 grep 'transfer_input_files' build.sub
 # If you have additional files in your /home directory that are required for your container, add them to the transfer_input_files line as a comma-separated list.
-#transfer_input_files = activate.R,renv.def,renv.lock,settings.json
+transfer_input_files = activate.R,renv.def,renv.lock,settings.json
 ```
 
 To begin building your Apptainer container, start an interactive job (`condor_build -i build.sub`) and use the apptainer `build` and `shell` commands to build and test the container. Once the software installation has been tested, move the container to `staging` before exiting the interactive build job.
@@ -229,7 +232,7 @@ apptainer shell -e renv.sif
 # test it
 exit
 # move the sif file to staging
-mv renv.sif /staging/netid/.
+mv renv.sif /staging/netid/
 # Exit the interactive job
 exit
 ```
@@ -257,12 +260,16 @@ To fix this, you will need to add instructions to the container definition file 
 
 For example, if the error message during the build is `libfftw3.so.3`, then the LIBRARY name is `libfftw3` according to the syntax above.
 
+> [!TIP]
+> The `renv` package typically provides the explicit name of the package to install. 
+> Look for the part of the message that specifies what to install on `Debian` or `Ubuntu`, and that is the name of the package that you should install.
+
 Directly inside of the interactive job, you can use nano to edit the `renv.def` file and add these lines below the `%post` line:
 
 ```
 %post
    chmod 777 /tmp
-   apt-get update
+   apt-get update -y
    apt-get -y install libfftw3-dev
 ```
 
@@ -272,7 +279,7 @@ apptainer build renv.sif renv.def
 ```
 
 >[!NOTE]
-> You might need to cycle through the rebuilding steps a few times. Here, it's common to see a "library missing" message, edit the definition file, build the container, and see that another library is missing. Keep adding lines to install the libraries to your %post section and rebuilding until it succeeds. 
+> You might need to cycle through the rebuilding steps a few times. Here, it's common to see a "library missing" message, edit the definition file, build the container, and see that another library is missing. Keep appending the missing library name to the end of the `apt-get -y install` line in the `%post` section and retry building the container until it succeeds.
 
 ## Use your new container in a job
 
@@ -281,7 +288,7 @@ Now that you have a custom-made R container for your project, you can use it in 
 To run an HTCondor job with this new container, the same principle applies as standard jobs: an executable `sh` script, a `submit` file with a `container_image` file path in linking to the `file://staging/netid/renv.sif` container you just created, and in this case an `.R` file that will be run on the remote machine. 
 
 >[!TIP]
-> This is a good time to ensure that all your folder is set-up properly for the job to run, including all the files you need
+> This is a good time to ensure that your folder is set-up properly for the job to run, including all the files you need.
 
 >[!TIP]
 > If you are testing your container in a job for the first time, make sure the executable `.R` script written in your HTCondor submit file applies on 1 "instance" of the job your want to run. Recall that HTcondor can queue instances as part of the submit file `queue` statement. This likely means that you need to **modify** the original script that you used and tested on your laptop.
